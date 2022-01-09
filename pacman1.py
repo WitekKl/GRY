@@ -9,7 +9,7 @@ SCREEN_TITLE = "PAC MAN"
 # https://arcade.academy/index.html
 # https://www.kenney.nl/
 # http://dig.ccmixter.org/
-# https://www.shadertoy.com/
+# https://craftpix.net/
 # muzyka jest dostępna na licencji Creative Commons
 
 SPRITE_IMAGE_SIZE = 128
@@ -32,10 +32,6 @@ SPRITE_SIZE = int(SPRITE_IMAGE_SIZE * SPRITE_SCALING_PLAYER)
 SCREEN_WIDTH = width
 SCREEN_HEIGHT = height
 ASPECT=SCREEN_HEIGHT / SCREEN_WIDTH
-#LEFT_VIEWPORT_MARGIN = 300
-#RIGHT_VIEWPORT_MARGIN = 300
-#BOTTOM_VIEWPORT_MARGIN = 200
-#TOP_VIEWPORT_MARGIN = 200
 DEAD_ZONE = 0.1
 RIGHT_FACING = 1
 LEFT_FACING = 0
@@ -44,7 +40,7 @@ DOWN_FACING=0
 DISTANCE_TO_CHANGE_TEXTURE = 8
 GRAVITY = 0
 class PlayerSprite(arcade.Sprite):
-    #definicja głownego statku
+    #definicja pac-a
     def __init__(self,
                  hit_box_algorithm):
         super().__init__()
@@ -125,7 +121,7 @@ class PlayerSprite(arcade.Sprite):
             self.texture = self.walk_textures[self.cur_texture][self.character_face_direction]
 
 class Dodatki(arcade.Sprite):
-    #wyświetlenie punktów - animacja
+    #wyświetlenie dodatkow - animacja
     def __init__(self, hit_box_algorithm):
         super().__init__()
 
@@ -234,7 +230,7 @@ class GameView(arcade.View):
     #główna część programu
     def __init__(self):
         super().__init__()
-        #definicja sprite-ów
+        #definicje
         arcade.set_background_color(arcade.color.BLUE_YONDER)
         self.player_sprite: Optional[PlayerSprite] = None
         self.tile_map = None
@@ -279,21 +275,19 @@ class GameView(arcade.View):
             "wall": {
                 "use_spatial_hash": True,
             },
-            "enemy": {
-                "use_spatial_hash": False,
+            "moving": {
+                "use_spatial_hash": True,
             },
             "out": {
                 "use_spatial_hash": True,
             }
         }
 
-
-        # Read in the tiled map
         self.tile_map = arcade.load_tilemap(map_name, SPRITE_SCALING_TILES, layer_options)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
         self.background = arcade.load_texture("images/tlo_4.jpg")
 
-        # Definicja pacman
+        # Definicja pacman - ustawienie startowej pozycji
         self.player_sprite = PlayerSprite( hit_box_algorithm="Simple")
 
         self.player_sprite.center_x = int(
@@ -335,6 +329,7 @@ class GameView(arcade.View):
                 element.time = int(element.properties["time"])
                 self.time=True
                 self.time_odlicz=element.time
+        #dzwieki
         self.live_sound = arcade.sound.load_sound("sound/live.wav")
         self.game_over_sound= arcade.sound.load_sound("sound/gameover.wav")
         self.eat_sound = arcade.sound.load_sound("sound/s_eat.wav")
@@ -344,7 +339,6 @@ class GameView(arcade.View):
         self.level_sound = arcade.load_sound("sound/level.wav")
         self.wolne_enemy= arcade.load_sound("sound/fall3.wav")
         self.pre_level_sound = arcade.load_sound("sound/wszystko.wav")
-
         self.tlo_sound = arcade.load_sound("sound/tlo.mp3")
         self.window.media_player =self.tlo_sound.play(MUSIC_VOLUME)
 
@@ -383,14 +377,11 @@ class GameView(arcade.View):
         arcade.load_font(font_name="ARCADECLASSIC.TTF")
         # Activate the game camera
         self.camera.use()
-
         arcade.draw_lrwh_rectangle_textured(self.screen_center_x-przelicz, self.screen_center_y-przelicz,
                                             SCREEN_WIDTH+przelicz*4, SCREEN_HEIGHT+przelicz*4,
                                             self.background)
 
-        # Draw our Scene
         self.scene.draw()
-
         self.gui_camera.use()
         arcade.draw_rectangle_filled(SCREEN_WIDTH*0.8,SCREEN_HEIGHT, 550, 120,
                                      arcade.csscolor.WHITE)
@@ -401,7 +392,6 @@ class GameView(arcade.View):
             SCREEN_HEIGHT-50,
             arcade.csscolor.FIREBRICK,
             18,font_name='ARCADECLASSIC')
-
 
         if self.koniecpoziomu:
             text = "KONIEC POZIOMU"
@@ -434,6 +424,7 @@ class GameView(arcade.View):
         self.camera.move_to(player_centered, panning_fraction)
 
     def postaw_dodatek(self, co):
+        #stawianie dodatkowych elementow
         if co ==0 or co>4:
             self.dodatki_czas = 0
             return
@@ -523,6 +514,7 @@ class GameView(arcade.View):
             self.shield.follow_sprite(self.player_sprite)
 
         zmien = False
+        #przesuwanie pac-a
         self.player_sprite.center_x = int(self.player_sprite.center_x)
         self.player_sprite.center_y = int(self.player_sprite.center_y)
         if self.czyruch:
@@ -551,25 +543,22 @@ class GameView(arcade.View):
             if self.up_pressed and not self.down_pressed :
                 self.player_sprite.change_y = MOVEMENT_SPEED
                 self.krok -= DISTANCE_TO_CHANGE_TEXTURE
-                self.player_sprite.kierunek=1
                 self.czyruch=True
             elif self.down_pressed and not self.up_pressed:
                 self.player_sprite.change_y = -MOVEMENT_SPEED
                 self.krok -= DISTANCE_TO_CHANGE_TEXTURE
-                self.player_sprite.kierunek=2
                 self.czyruch = True
             if self.left_pressed and not self.right_pressed:
                 self.player_sprite.change_x = -MOVEMENT_SPEED
                 self.krok -= DISTANCE_TO_CHANGE_TEXTURE
-                self.player_sprite.kierunek=3
                 self.czyruch = True
             elif self.right_pressed and not self.left_pressed:
                 self.player_sprite.change_x = MOVEMENT_SPEED
                 self.krok -= DISTANCE_TO_CHANGE_TEXTURE
-                self.player_sprite.kierunek=4
                 self.czyruch = True
 
-        for enemy in self.scene.name_mapping["enemy"] :
+        for enemy in self.scene.name_mapping["enemy"]:
+        #ruszanie enemy
             if enemy.angle>0:
                 enemy.angle+=5
                 if enemy.angle==360:
@@ -619,7 +608,7 @@ class GameView(arcade.View):
                                 enemy.center_x += predkosc
 
                             if abs(self.player_sprite.center_x-enemy.center_x)<3:
-                                # sprawdzenie czy na tej samej pionowej ścieżce
+                                # sprawdzenie czy na tej samej pionowej ścieżce - włacz sledzenie paca
                                 if self.player_sprite.center_y>enemy.center_y:
                                     enemy.center_x=self.player_sprite.center_x
                                     enemy.change_y = predkosc
@@ -629,7 +618,7 @@ class GameView(arcade.View):
                                     enemy.change_y = -predkosc
                                     enemy.change_x = 0
                             if abs(self.player_sprite.center_y-enemy.center_y)<3:
-                                # sprawdzenie czy na tej samej poziomej ścieżce
+                                # sprawdzenie czy na tej samej poziomej ścieżce - włacz sledzenie paca
                                 if self.player_sprite.center_x>enemy.center_x:
                                     enemy.center_y=self.player_sprite.center_y
                                     enemy.change_x = predkosc
@@ -669,18 +658,22 @@ class GameView(arcade.View):
                     enemy.change_y = (-1) * enemy.change_y
                     zmien = True
                 if len(arcade.check_for_collision_with_list (enemy, self.scene.name_mapping["moving"]))>0:
+                    #odbicie
                     enemy.change_x = (-1)*enemy.change_x
                     enemy.change_y = (-1) * enemy.change_y
                     zmien = True
                 if len(arcade.check_for_collision_with_list (enemy, self.scene.name_mapping["shield"]))>0:
+                    #odbicie
                     enemy.change_x = (-1)*enemy.change_x
                     enemy.change_y = (-1) * enemy.change_y
                     zmien = True
                 if len(arcade.check_for_collision_with_list (enemy, self.scene.name_mapping["out"]))>0 and not zmien:
+                    #odbicie
                     enemy.change_x = (-1)*enemy.change_x
                     enemy.change_y = (-1) * enemy.change_y
 
         if len(arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["eat"]))>0:
+            #zjadanie
             hit_list = arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["eat"])
             for eata in hit_list:
                 eata.remove_from_sprite_lists()
@@ -697,6 +690,7 @@ class GameView(arcade.View):
                                     arcade.sound.play_sound(self.pre_level_sound)
                                     #usunięcie ściany do wyjścia
         if len(arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["fruit"]))>0:
+            #zjadanie owocu
             hit_list = arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["fruit"])
             for fruity in hit_list:
                 fruity.remove_from_sprite_lists()
@@ -713,6 +707,7 @@ class GameView(arcade.View):
                         self.koniecpoziomu=True
                         self.czas_koniecpoziomu = 100
         if len(arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["out"]))>0:
+            #przesuniecia - czy mozna przejsc
             hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene.name_mapping["out"])
             for element in hit_list:
                 if abs(self.player_sprite.center_x-element.center_x)<4 and "move_x" in element.properties and not self.przenosiny:
@@ -726,6 +721,7 @@ class GameView(arcade.View):
         if len(arcade.check_for_collision_with_list(self.player_sprite, self.scene.name_mapping["out"])) == 0:
             self.przenosiny = False
         if len(arcade.check_for_collision_with_list(self.player_sprite, self.scene.name_mapping["dodatki"])) > 0:
+            #zjedzony dodatek - jaki?
             hit_list = arcade.check_for_collision_with_list (self.player_sprite, self.scene.name_mapping["dodatki"])
             for element in hit_list:
                 element.remove_from_sprite_lists()
@@ -747,6 +743,7 @@ class GameView(arcade.View):
                     #tarcza
                     self.shield1 += 1
         if len(arcade.check_for_collision_with_list(self.player_sprite, self.scene.name_mapping["enemy"])) > 0:
+            #spotkanie enemy
             if self.strata_zycia_czas==0 and self.shield1==0:
                 self.life -=1
                 self.player_sprite.dead = True
