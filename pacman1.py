@@ -79,6 +79,7 @@ class PlayerSprite(arcade.Sprite):
             self.character_face_direction = LEFT_FACING
         elif self.change_x > DEAD_ZONE and self.character_face_direction == LEFT_FACING:
             self.character_face_direction = RIGHT_FACING
+        # co w przypadku dead
         if self.dead:
             if self.pocz_dead:
                 self.cur_texture = 0
@@ -93,9 +94,8 @@ class PlayerSprite(arcade.Sprite):
                     self.dead = False
                     self.pocz_dead = True
                     self.texture = self.idle_textures[0][self.character_face_direction]
-
             return
-
+        # kiedy sie ruszamy albo nic nie robimy
         self.x_odometer += self.change_x
         self.y_odometer += self.change_y
         self.dy = self.change_y
@@ -121,7 +121,7 @@ class PlayerSprite(arcade.Sprite):
             self.texture = self.walk_textures[self.cur_texture][self.character_face_direction]
 
 class Dodatki(arcade.Sprite):
-    #wyświetlenie dodatkow - animacja
+    #wyświetlenie dodatkow + animacja
     def __init__(self, hit_box_algorithm):
         super().__init__()
 
@@ -226,6 +226,7 @@ class Shield(arcade.Sprite):
     def follow_sprite(self, player_sprite):
         self.center_y = player_sprite.center_y
         self.center_x = player_sprite.center_x
+        
 class GameView(arcade.View):
     #główna część programu
     def __init__(self):
@@ -266,7 +267,6 @@ class GameView(arcade.View):
         self.camera = arcade.Camera(width, height)
         self.gui_camera = arcade.Camera(width, height)
         self.life=3
-
         # Odczyt map
         map_name = "pac_"+str(self.level) + ".json"
 
@@ -282,7 +282,6 @@ class GameView(arcade.View):
                 "use_spatial_hash": True,
             }
         }
-
         self.tile_map = arcade.load_tilemap(map_name, SPRITE_SCALING_TILES, layer_options)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
         self.background = arcade.load_texture("images/tlo_4.jpg")
@@ -294,7 +293,6 @@ class GameView(arcade.View):
             self.tile_map.tile_width * SPRITE_SCALING_PLAYER * PLAYER_START_X*1.5)
         self.player_sprite.center_y = int(
             self.tile_map.tile_height * SPRITE_SCALING_PLAYER * PLAYER_START_Y*1.5)
-
         self.scene.add_sprite("Player", self.player_sprite)
 
         #dodatki
@@ -311,7 +309,7 @@ class GameView(arcade.View):
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player_sprite, [self.scene.name_mapping["wall"], self.scene.name_mapping["moving"]],GRAVITY
         )
-
+        #odczyt z mapy elementow
         for element in self.scene.name_mapping["moving"]:
             if  "time" in element.properties:
                 element.time = int(element.properties["time"])
@@ -373,6 +371,7 @@ class GameView(arcade.View):
             self.down_pressed = False
 
     def on_draw(self):
+        #wyswietlenie calosci
         arcade.start_render()
         arcade.load_font(font_name="ARCADECLASSIC.TTF")
         # Activate the game camera
@@ -392,7 +391,7 @@ class GameView(arcade.View):
             SCREEN_HEIGHT-50,
             arcade.csscolor.FIREBRICK,
             18,font_name='ARCADECLASSIC')
-
+        #dodatkowe napisy na koniec poziomu
         if self.koniecpoziomu:
             text = "KONIEC POZIOMU"
             arcade.draw_text(
@@ -401,6 +400,7 @@ class GameView(arcade.View):
                 SCREEN_HEIGHT * 0.5,
                 arcade.csscolor.WHITE,
                 50, anchor_x='center', font_name='ARCADECLASSIC')
+        #dodatkowe napisy na koniec gry
         if self.gameover:
             text = "GAME OVER"
             arcade.draw_text(
@@ -411,6 +411,7 @@ class GameView(arcade.View):
                 50, anchor_x='center', font_name='ARCADECLASSIC')
 
     def center_camera_to_player(self, panning_fraction: float = 0.7):
+        #kamera centlanie do paca
         self.screen_center_x = self.player_sprite.center_x -width/8 - (self.camera.viewport_width / 2)
         self.screen_center_y = self.player_sprite.center_y - (
             self.camera.viewport_height / 2
@@ -420,7 +421,6 @@ class GameView(arcade.View):
         if self.screen_center_y < 0:
             self.screen_center_y = 0
         player_centered = self.screen_center_x, self.screen_center_y
-
         self.camera.move_to(player_centered, panning_fraction)
 
     def postaw_dodatek(self, co):
@@ -438,10 +438,10 @@ class GameView(arcade.View):
             self.dodatki.texture = self.dodatki.heart_textures[0]
         elif co ==4:
             self.dodatki.texture = self.dodatki.shield_textures[0]
-
         self.dodatki.center_x=int(random.randrange(self.tile_map.width)*przelicz+przelicz/2)
         self.dodatki.center_y=int(random.randrange(self.tile_map.height)*przelicz+przelicz/2)
         self.scene.add_sprite("dodatki", self.dodatki)
+        #sprawdzenie czy dodatek nie jest na scianie
         for dodatek in self.scene.name_mapping["dodatki"]:
             if len(arcade.check_for_collision_with_list (dodatek, self.scene.name_mapping["wall"]))>0:
                 dodatek.remove_from_sprite_lists()
@@ -450,6 +450,7 @@ class GameView(arcade.View):
                 arcade.sound.play_sound(self.poj_upgrade_sound)
 
     def zmien_predkosc (self, ruch):
+        #zmina predkosci enemy
         for element in self.scene.name_mapping["enemy"]:
             if element.change_x>0:
                 element.change_x = element.predkosc + ruch
@@ -466,7 +467,9 @@ class GameView(arcade.View):
         self.czas_gameover = 250
 
     def on_update(self, delta_time: float = 1 / 60):
+        #aktualizacja calosci
         if self.gameover:
+            #sprawdzenie czy koniec 
             self.czas_gameover-=1
             if self.czas_gameover==0:
                 self.gameover = False
@@ -475,6 +478,7 @@ class GameView(arcade.View):
                 self.setup()
             return
         if self.koniecpoziomu:
+            #sprawdzenie czy koniec poziomu
             self.czas_koniecpoziomu-=1
             if self.czas_koniecpoziomu==0:
                 self.koniecpoziomu = False
@@ -487,6 +491,7 @@ class GameView(arcade.View):
                     self.setup()
         self.dodatki_czas+=1
         if self.time:
+            #czy enemy sa zamkniete i kiedy je uwalniamy
             self.time_odlicz-=1
             if self.time_odlicz==0:
                 self.time = False
@@ -495,17 +500,20 @@ class GameView(arcade.View):
                         element.remove_from_sprite_lists ()
                         arcade.play_sound(self.wolne_enemy)
         if self.czas_ruch>0:
+            #koniec zmiany predkosci enemy
             self.czas_ruch-=1
             if self.czas_ruch==0:
                 self.zmien_predkosc(0)
 
         if self.strata_zycia_czas > 0:
+            #po stracie zycia czas ochrony
             self.strata_zycia_czas-=1
 
         if self.dodatki_czas>=250:
+            #losujemy dodatek
             co=random.randrange(5)
             self.postaw_dodatek(co)
-
+        #aktualizacja silnika i elementow ruchomych
         self.physics_engine.update()
         self.player_sprite.update()
         self.scene.update(["enemy", "dodatki"])
@@ -517,6 +525,7 @@ class GameView(arcade.View):
         #przesuwanie pac-a
         self.player_sprite.center_x = int(self.player_sprite.center_x)
         self.player_sprite.center_y = int(self.player_sprite.center_y)
+        #chcemy aby pac byl na srodku sciezki
         if self.czyruch:
             self.krok-=DISTANCE_TO_CHANGE_TEXTURE
             if self.krok ==0:
@@ -529,7 +538,6 @@ class GameView(arcade.View):
                         self.player_sprite.change_x = max(przelicz - self.przes_x, DISTANCE_TO_CHANGE_TEXTURE)
                     else:
                         self.player_sprite.change_x = -min(self.przes_x, DISTANCE_TO_CHANGE_TEXTURE)
-
                 if self.przes_y != 0:
                     if self.przes_y > przelicz/2:
                         self.player_sprite.change_y = max(przelicz - self.przes_y, DISTANCE_TO_CHANGE_TEXTURE)
@@ -566,7 +574,6 @@ class GameView(arcade.View):
                     enemy.change_x = enemy.tym_x
                     enemy.change_y = enemy.tym_y
             else:
-
                 if abs(enemy.change_x)>0:
                     predkosc=abs(enemy.change_x)
                 else:
@@ -763,6 +770,7 @@ class GameView(arcade.View):
                     arcade.sound.play_sound(self.live_sound)
 
         if self.shield_active == 0 and self.shield1>0:
+            #aktywacja shield
             self.uzyjshield()
         if self.shield_active > 0:
             self.shield_active += 1
@@ -770,6 +778,7 @@ class GameView(arcade.View):
                 self.shield_active = 0
                 self.shield1 -= 1
                 self.shield.remove_from_sprite_lists()
+        #dodatkowe sprawdzanie do przenosin pac-a - czy jest poza plansza
         if self.player_sprite.right>self.tile_map.width*przelicz:
             self.player_sprite.right=self.tile_map.width*przelicz
             self.przenosiny = False
@@ -782,8 +791,7 @@ class GameView(arcade.View):
         if self.player_sprite.bottom<0:
             self.player_sprite.bottom=0
             self.przenosiny=False
-
-
+        #animacja elementow z mapy
         self.scene.update_animation (delta_time,["enemy", "fruit", "eat", "out"])
         #przesunięcia ring i ustawienie enemy
         for element in self.scene.name_mapping["moving"]:
@@ -795,6 +803,7 @@ class GameView(arcade.View):
                     element.move_x*=(-1)
                     if len(arcade.check_for_collision_with_list (element, self.scene.name_mapping["enemy"]))>0:
                         hitlist=arcade.check_for_collision_with_list (element, self.scene.name_mapping["enemy"])
+                        #sprawdzenie czy po przesunieciu ring nie ma kolizaji z enemy - jest lekkie przesuniecie w poziomie
                         for element1 in hitlist:
                             if element.move_x>0:
                                 element1.center_x =element1.center_x+przelicz+2
@@ -807,13 +816,14 @@ class GameView(arcade.View):
                     element.move_y*=(-1)
                     if len(arcade.check_for_collision_with_list (element, self.scene.name_mapping["enemy"]))>0:
                         hitlist=arcade.check_for_collision_with_list (element, self.scene.name_mapping["enemy"])
+                        #sprawdzenie czy po przesunieciu ring nie ma kolizaji z enemy - jest lekkie przesuniecie w pionie
                         for element1 in hitlist:
                             if element.move_y > 0:
                                 element1.center_y =element1.center_y+przelicz+2
                             else:
                                 element1.center_y = element1.center_y -przelicz-2
 
-        # Position the camera
+        # centrowanie kamery
         self.center_camera_to_player(panning_fraction=0.1)
 
 def main():
