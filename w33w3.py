@@ -46,7 +46,7 @@ DYNAMIC_ITEM_FRICTION = 0.6
 PLAYER_MASS = 2.0
 PLAYER_MAX_HORIZONTAL_SPEED = 450
 PLAYER_MAX_VERTICAL_SPEED = 1600
-PLAYER_MOVE_FORCE_ON_GROUND = 20000
+PLAYER_MOVE_FORCE_ON_GROUND = 10000
 PLAYER_MOVE_FORCE_IN_AIR = 900
 PLAYER_JUMP_IMPULSE = 1800
 DEAD_ZONE = 0.1
@@ -517,6 +517,8 @@ class PlayerSprite(arcade.Sprite):
         if not is_on_ground:
             if dy > DEAD_ZONE:
                 self.texture = self.jump_texture_pair[self.character_face_direction]
+                self.snorkl=False
+                self.czas_min_snorkl = 10
                 return
             elif dy < -DEAD_ZONE:
                 self.texture = self.fall_texture_pair[self.character_face_direction]
@@ -958,11 +960,11 @@ class GameView(arcade.View):
         layer_options = {
             "Ladders": {
                 "use_spatial_hash": True,
-                "hit_box_algorithm": 'None',
+                "hit_box_algorithm": 'Simple',
             },
             "Dont touch": {
                 "use_spatial_hash": True,
-                "hit_box_algorithm": 'Simple',
+                "hit_box_algorithm": 'Detailed',
             },
             "Water": {
                 "use_spatial_hash": True,
@@ -982,7 +984,7 @@ class GameView(arcade.View):
                 "hit_box_algorithm": 'None',
             },
             "Moving Platforms": {
-                "hit_box_algorithm": 'None',
+                "hit_box_algorithm": 'Simple',
             },
             "Xenemy": {
                 "hit_box_algorithm": 'Detailed',
@@ -1150,6 +1152,11 @@ class GameView(arcade.View):
             bullet_enemy_sprite.remove_from_sprite_lists()
 
         self.physics_engine.add_collision_handler("bullet_enemy", "item", post_handler=item_hit_handler2)
+
+        def bulletenemy_hit_handler1(bullet_enemy_sprite, water_sprite, _arbiter, _space, _data):
+            bullet_enemy_sprite.remove_from_sprite_lists()
+
+        self.physics_engine.add_collision_handler("bullet_enemy", "water", post_handler=bulletenemy_hit_handler1)
 
         def item_hit_handler3(item_sprite, xenemy, _arbiter, _space, _data):
             points = int(xenemy.properties['Points'])
